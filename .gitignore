@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+task-dashboard/node_modules/
+task-dashboard/package-lock.json
+
+# Build outputs
+.next/
+dist/
+out/
+task-dashboard/.next/
+task-dashboard/dist/
+task-dashboard/out/
+
+# Environment
+.env
+.env.local
+.env*.local
+.mcp.json
+.claude/settings.local.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+.cache/
+
+# Task dashboard (separate npm package with own repo)
+task-dashboard/
