@@ -20,6 +20,7 @@ export async function POST() {
 
     // Получить текущее видео (первое pending)
     const { data: currentVideo } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('*')
       .eq('status', 'pending')
@@ -39,6 +40,7 @@ export async function POST() {
 
     // Пометить текущее видео как skipped
     const { error } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .update({
         status: 'skipped',

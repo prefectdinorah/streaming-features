@@ -1,12 +1,16 @@
-# Claude Code - Инструкции проекта
+# Claude Code - Общие требования к разработке
 
-## Технологический стек
+## О проекте
 
-- **Frontend:** Next.js 14+ (App Router, Server Components)
-- **Backend:** Supabase (Auth, Database, RLS, Storage)
-- **Styling:** Tailwind CSS + shadcn/ui
-- **Language:** TypeScript (strict mode)
-- **Deploy:** Vercel
+Описание проекта, архитектура и инструкции по установке находятся в [README.md](README.md).
+
+## Технологический стек (общие требования)
+
+- **TypeScript** strict mode, нет `any`
+- **Next.js** (App Router, Server Components)
+- **Supabase** (Database, Realtime, RLS)
+- **Tailwind CSS** для стилизации
+- **Vercel** для деплоя
 - **Язык документации:** Русский
 
 ## Агенты (База знаний)
@@ -56,7 +60,7 @@ Claude Code:
 1. **Планирование** → Спецификация в `docs/features/`
 2. **Разработка** → Feature ветка из `dev`
 3. **Тестирование** → Coverage минимум 80%
-4. **Code Review** → Проверка перед мерджем
+4. **Code Review** → Проверка перед мержем
 5. **Мердж в dev** → После одобрения
 6. **Документация** → Обновить CHANGELOG
 
@@ -70,7 +74,9 @@ refactor: рефакторинг auth модуля
 test: добавлены тесты для профиля
 ```
 
-## Структура документации
+## Структура проекта
+
+### Документация
 
 ```
 docs/                          # Создаётся агентом документации
@@ -84,6 +90,26 @@ docs/                          # Создаётся агентом докуме�
 └── features/                  # Спецификации фич
 ```
 
+### База данных (Supabase)
+
+- **Схемы:** Каждый проект должен использовать отдельную схему (не `public`)
+- **Миграции:** Все изменения БД через SQL миграции в `supabase/migrations/`
+- **RLS:** Включен для всех таблиц с политиками безопасности
+- **Комментарии:** Все таблицы, колонки, функции должны иметь `COMMENT ON`
+
+Пример структуры:
+```sql
+CREATE SCHEMA IF NOT EXISTS project_name;
+
+CREATE TABLE project_name.table_name (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ...
+);
+
+COMMENT ON SCHEMA project_name IS 'Описание проекта';
+COMMENT ON TABLE project_name.table_name IS 'Описание таблицы';
+```
+
 ## Авто-одобренные команды
 
 См. [.claude/config/auto-approved-commands.md](.claude/config/auto-approved-commands.md)
@@ -93,11 +119,13 @@ docs/                          # Создаётся агентом докуме�
 ### Всегда
 
 - TypeScript strict mode, нет `any`
-- Server Components по умолчанию
+- Server Components по умолчанию (Next.js)
 - RLS включен для всех таблиц Supabase
+- Отдельная схема для каждого проекта в БД
 - Валидация данных через Zod
 - Комментарии и документация на русском
 - Тесты для критичной логики
+- SQL миграции с подробными комментариями
 
 ### Никогда
 
@@ -105,6 +133,7 @@ docs/                          # Создаётся агентом докуме�
 - Не коммитить секреты (.env, credentials)
 - Не пропускать code review
 - Не деплоить без тестов
+- Не использовать схему `public` для проектных таблиц
 
 ## Уведомления
 

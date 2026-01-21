@@ -22,6 +22,7 @@ export async function initializePlayerSettings() {
 
     // Проверить, существуют ли уже настройки
     const { data: existing, error: selectError } = await supabase
+      .schema('twitch_player')
       .from('player_settings')
       .select('id')
       .maybeSingle()
@@ -40,6 +41,7 @@ export async function initializePlayerSettings() {
 
     // Создать дефолтные настройки
     const { error: insertError } = await supabase
+      .schema('twitch_player')
       .from('player_settings')
       .insert({
         is_paused: false,

@@ -45,6 +45,7 @@ export function useRealtimeQueue() {
    */
   const loadQueue = useCallback(async () => {
     const { data, error } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('*')
       .eq('status', 'pending')
@@ -69,6 +70,7 @@ export function useRealtimeQueue() {
   const markAsCompleted = useCallback(
     async (videoId: string) => {
       const { error } = await supabase
+        .schema('twitch_player')
         .from('video_queue')
         .update({
           status: 'completed',
@@ -101,7 +103,7 @@ export function useRealtimeQueue() {
           'postgres_changes',
           {
             event: '*', // INSERT, UPDATE, DELETE
-            schema: 'public',
+            schema: 'twitch_player',
             table: 'video_queue',
           },
           (payload) => {

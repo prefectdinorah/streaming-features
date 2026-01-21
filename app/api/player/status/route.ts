@@ -22,12 +22,14 @@ export async function GET() {
 
     // Получить настройки плеера
     const { data: settings } = await supabase
+      .schema('twitch_player')
       .from('player_settings')
       .select('*')
       .maybeSingle()
 
     // Получить текущее видео (первое pending)
     const { data: currentVideo } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('*')
       .eq('status', 'pending')
@@ -37,6 +39,7 @@ export async function GET() {
 
     // Получить количество видео в очереди
     const { count } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending')

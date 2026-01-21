@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
 
     // Получить настройки плеера
     const { data: settings } = await supabase
+      .schema('twitch_player')
       .from('player_settings')
       .select('*')
       .single()
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
       // 2. Проверка дубликатов (если запрещены)
       if (!settings.allow_duplicates) {
         const { data: existing } = await supabase
+          .schema('twitch_player')
           .from('video_queue')
           .select('id')
           .eq('youtube_id', videoId)

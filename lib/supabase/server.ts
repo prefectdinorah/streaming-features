@@ -11,7 +11,10 @@ import type { Database } from '@/types/database'
  *
  * export default async function MyPage() {
  *   const supabase = await createClient()
- *   const { data } = await supabase.from('video_queue').select('*')
+ *   const { data } = await supabase
+ *     .schema('twitch_player')
+ *     .from('video_queue')
+ *     .select('*')
  *   // ...
  * }
  * ```
@@ -68,7 +71,10 @@ export async function createClient() {
  * export async function POST(request: Request) {
  *   const supabase = createServiceClient()
  *   // Этот клиент обходит RLS политики
- *   const { data, error } = await supabase.from('video_queue').insert(...)
+ *   const { data, error } = await supabase
+ *     .schema('twitch_player')
+ *     .from('video_queue')
+ *     .insert(...)
  *   // ...
  * }
  * ```

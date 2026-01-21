@@ -17,6 +17,7 @@ export async function GET() {
     const supabase = await createClient()
 
     const { data, error } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('*')
       .eq('status', 'pending')
