@@ -16,10 +16,3 @@ export type {
   YouTubeVideoMetadata,
   YouTubeAPIResponse,
 } from './queue'
-
-// Player types
-export type {
-  YouTubePlayerConfig,
-  UseRealtimeQueueResult,
-  PlayerState,
-} from './player'

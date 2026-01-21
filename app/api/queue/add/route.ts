@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
 
       // 3. Проверка размера очереди
       const { count } = await supabase
+        .schema('twitch_player')
         .from('video_queue')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending')
@@ -140,6 +141,7 @@ export async function POST(request: NextRequest) {
 
     // Получить следующую позицию в очереди
     const { data: lastVideo } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .select('position')
       .eq('status', 'pending')
@@ -151,6 +153,7 @@ export async function POST(request: NextRequest) {
 
     // Добавить видео в очередь
     const { data: newVideo, error: insertError } = await supabase
+      .schema('twitch_player')
       .from('video_queue')
       .insert({
         youtube_id: videoId,

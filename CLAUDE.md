@@ -1,50 +1,84 @@
-# Claude Code - Общие требования к разработке
+# Claude Code - Инструкции проекта
 
-## О проекте
+## Технологический стек
 
-Описание проекта, архитектура и инструкции по установке находятся в [README.md](README.md).
-
-## Технологический стек (общие требования)
-
-- **TypeScript** strict mode, нет `any`
-- **Next.js** (App Router, Server Components)
-- **Supabase** (Database, Realtime, RLS)
-- **Tailwind CSS** для стилизации
-- **Vercel** для деплоя
+- **Frontend:** Next.js 14+ (App Router, Server Components)
+- **Backend:** Supabase (Auth, Database, RLS, Storage)
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Language:** TypeScript (strict mode)
+- **Deploy:** Vercel
 - **Язык документации:** Русский
 
-## Агенты (База знаний)
+## Специализированные агенты
 
-Инструкции для разных типов задач находятся в `.claude/agents/`:
+Проект использует систему специализированных агентов для разных типов задач. Агенты находятся в `.claude/agents/` и вызываются через Task tool.
 
-| Файл | Когда использовать |
-|------|-------------------|
-| `project-documentation-engineer.md` | Документация, CHANGELOG, архитектура |
-| `git-workflow-specialist.md` | Git операции, ветки, коммиты |
-| `nextjs-supabase-specialist.md` | Backend, Server Actions, Supabase |
-| `ui-ux-designer-nextjs.md` | UI компоненты, формы, Tailwind |
-| `code-reviewer-nextjs.md` | Code review перед мержем |
-| `test-engineer-nextjs.md` | Unit, integration, E2E тесты |
-| `vercel-deployment-specialist.md` | Деплой, CI/CD, мониторинг |
+| Агент | Когда использовать | Вызов |
+|-------|-------------------|-------|
+| `project-documentation-engineer` | Документация, CHANGELOG, архитектура | Автоматически для задач документирования |
+| `git-workflow-specialist` | Git операции, ветки, коммиты, PR | Автоматически для git задач |
+| `nextjs-supabase-specialist` | Backend, Server Actions, Supabase | Автоматически для backend задач |
+| `ui-ux-designer-nextjs` | UI компоненты, формы, Tailwind | Автоматически для UI/UX задач |
+| `code-reviewer-nextjs` | Code review перед мержем | Автоматически перед коммитом |
+| `test-engineer-nextjs` | Unit, integration, E2E тесты | Автоматически после написания кода |
+| `vercel-deployment-specialist` | Деплой, CI/CD, мониторинг | Автоматически для задач деплоя |
 
 ### Как работают агенты
 
-Это **не автозапуск**. Это база знаний, которую я использую:
+**ВАЖНО:** Агенты вызываются через **Task tool**, а не просто читаются как документация.
+
+**Примеры использования:**
 
 ```
-Пользователь: "Создай форму авторизации"
+Задача: "Создай форму авторизации"
 
 Claude Code:
-1. Читает ui-ux-designer-nextjs.md + nextjs-supabase-specialist.md
-2. Применяет паттерны из этих инструкций
-3. Может запустить параллельные Task для ускорения
+1. Вызывает ui-ux-designer-nextjs через Task для создания UI
+2. Вызывает nextjs-supabase-specialist через Task для backend
+3. Может запустить агенты параллельно для ускорения
+```
+
+```
+Задача: "Задеплой на Vercel"
+
+Claude Code:
+1. Сначала вызывает code-reviewer-nextjs для проверки
+2. Затем вызывает git-workflow-specialist для коммита
+3. Наконец вызывает vercel-deployment-specialist для деплоя
+```
+
+### Мои обязанности (Claude Code)
+
+**При работе над задачами я ДОЛЖЕН:**
+
+1. **Определить тип задачи** и выбрать подходящего агента
+2. **Использовать Task tool** для вызова специализированного агента
+3. **Запускать агенты параллельно** когда это возможно (UI + Backend)
+4. **Всегда вызывать code-reviewer** перед коммитом
+5. **Всегда вызывать test-engineer** после написания кода
+
+**Примеры вызовов:**
+
+```typescript
+// Для UI задачи
+Task(subagent_type: "ui-ux-designer-nextjs",
+     prompt: "Создай форму регистрации с валидацией")
+
+// Для Backend задачи
+Task(subagent_type: "nextjs-supabase-specialist",
+     prompt: "Создай Server Action для регистрации")
+
+// Для Git задачи
+Task(subagent_type: "git-workflow-specialist",
+     prompt: "Создай feature ветку и закоммить изменения")
 ```
 
 ### Явный вызов агента
 
-Если хочешь использовать конкретного агента:
+Пользователь может явно указать агента:
 ```
-"Используя инструкции из git-workflow-specialist.md, создай feature ветку для авторизации"
+"Используй git-workflow-specialist для создания feature ветки"
+"Вызови code-reviewer для проверки перед коммитом"
 ```
 
 ## Git Workflow
@@ -60,7 +94,7 @@ Claude Code:
 1. **Планирование** → Спецификация в `docs/features/`
 2. **Разработка** → Feature ветка из `dev`
 3. **Тестирование** → Coverage минимум 80%
-4. **Code Review** → Проверка перед мержем
+4. **Code Review** → Проверка перед мерджем
 5. **Мердж в dev** → После одобрения
 6. **Документация** → Обновить CHANGELOG
 
@@ -74,9 +108,7 @@ refactor: рефакторинг auth модуля
 test: добавлены тесты для профиля
 ```
 
-## Структура проекта
-
-### Документация
+## Структура документации
 
 ```
 docs/                          # Создаётся агентом документации
@@ -90,25 +122,51 @@ docs/                          # Создаётся агентом докуме�
 └── features/                  # Спецификации фич
 ```
 
-### База данных (Supabase)
+## Task Dashboard
 
-- **Схемы:** Каждый проект должен использовать отдельную схему (не `public`)
-- **Миграции:** Все изменения БД через SQL миграции в `supabase/migrations/`
-- **RLS:** Включен для всех таблиц с политиками безопасности
-- **Комментарии:** Все таблицы, колонки, функции должны иметь `COMMENT ON`
+**URL:** https://claude-task-dashboard-seven.vercel.app/
 
-Пример структуры:
-```sql
-CREATE SCHEMA IF NOT EXISTS project_name;
+Real-time Kanban дашборд для визуализации задач проекта. Каждый проект должен иметь свой дашборд для отслеживания прогресса работы.
 
-CREATE TABLE project_name.table_name (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ...
-);
+### Настройка для проекта
 
-COMMENT ON SCHEMA project_name IS 'Описание проекта';
-COMMENT ON TABLE project_name.table_name IS 'Описание таблицы';
-```
+1. **Создать проект на дашборде:**
+   - Перейди на https://claude-task-dashboard-seven.vercel.app/
+   - Вкладка "Create New"
+   - Введи название проекта
+   - Скопируй Webhook URL
+
+2. **Настроить webhook (пока вручную):**
+   - После каждого обновления задач отправляй POST на webhook URL
+   - Формат данных:
+   ```json
+   {
+     "project": "Название проекта",
+     "lastUpdated": "2025-01-20T17:00:00.000Z",
+     "tasks": [
+       {
+         "id": "task-1",
+         "content": "Описание задачи",
+         "status": "pending | in_progress | completed",
+         "activeForm": "Что делается сейчас",
+         "createdAt": "2025-01-20T16:00:00.000Z",
+         "updatedAt": "2025-01-20T17:00:00.000Z",
+         "tags": ["backend", "api"]
+       }
+     ]
+   }
+   ```
+
+### Мои обязанности (Claude Code)
+
+**ВАЖНО:** При работе над задачами я должен:
+
+1. **Использовать TodoWrite** для всех нетривиальных задач
+2. **Отслеживать прогресс** через todo list
+3. **Синхронизировать статусы** с Task Dashboard через webhook
+4. **Группировать задачи** логически с использованием тегов
+
+Это помогает владельцу проекта видеть прогресс в реальном времени через красивый UI.
 
 ## Авто-одобренные команды
 
@@ -119,13 +177,11 @@ COMMENT ON TABLE project_name.table_name IS 'Описание таблицы';
 ### Всегда
 
 - TypeScript strict mode, нет `any`
-- Server Components по умолчанию (Next.js)
+- Server Components по умолчанию
 - RLS включен для всех таблиц Supabase
-- Отдельная схема для каждого проекта в БД
 - Валидация данных через Zod
 - Комментарии и документация на русском
 - Тесты для критичной логики
-- SQL миграции с подробными комментариями
 
 ### Никогда
 
@@ -133,7 +189,6 @@ COMMENT ON TABLE project_name.table_name IS 'Описание таблицы';
 - Не коммитить секреты (.env, credentials)
 - Не пропускать code review
 - Не деплоить без тестов
-- Не использовать схему `public` для проектных таблиц
 
 ## Уведомления
 

@@ -3,10 +3,42 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRealtimeQueue } from '@/hooks/useRealtimeQueue'
 
+// Минимальная типизация для YouTube IFrame API
+interface YT {
+  Player: {
+    new (elementId: string, config: {
+      height?: string
+      width?: string
+      videoId?: string
+      playerVars?: Record<string, unknown>
+      events?: {
+        onReady?: (event: { target: YTPlayer }) => void
+        onStateChange?: (event: { data: number; target: YTPlayer }) => void
+        onError?: (event: { data: number }) => void
+      }
+    }): YTPlayer
+  }
+  PlayerState: {
+    ENDED: number
+    PLAYING: number
+    PAUSED: number
+    BUFFERING: number
+    CUED: number
+  }
+}
+
+interface YTPlayer {
+  loadVideoById(videoId: string): void
+  playVideo(): void
+  pauseVideo(): void
+  stopVideo(): void
+  destroy(): void
+}
+
 // Глобальный тип для YouTube IFrame API
 declare global {
   interface Window {
-    YT: typeof YT
+    YT: YT
     onYouTubeIframeAPIReady: () => void
   }
 }
@@ -33,7 +65,7 @@ declare global {
  * ```
  */
 export function YouTubePlayer() {
-  const playerRef = useRef<YT.Player | null>(null)
+  const playerRef = useRef<YTPlayer | null>(null)
   const { currentVideo, markAsCompleted, isLoading } = useRealtimeQueue()
   const [isApiReady, setIsApiReady] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null)
