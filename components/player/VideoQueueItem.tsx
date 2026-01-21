@@ -103,19 +103,26 @@ export function VideoQueueItem({
       </div>
 
       {/* Действия */}
-      <div className="flex-shrink-0 flex items-center space-x-2">
+      <div className="flex-shrink-0 flex items-center space-x-3">
         {isFirst ? (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
+          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white shadow-lg">
+            <svg
+              className="w-4 h-4 mr-2 animate-pulse"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="3" />
+            </svg>
             Воспроизводится
           </span>
         ) : (
           <button
             onClick={handlePlay}
             disabled={isPending}
-            className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
           >
             <svg
-              className="w-4 h-4"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -133,7 +140,7 @@ export function VideoQueueItem({
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span>Играть</span>
+            <span>Играть сейчас</span>
           </button>
         )}
       </div>

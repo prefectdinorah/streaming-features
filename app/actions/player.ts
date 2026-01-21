@@ -274,6 +274,45 @@ export async function playSpecificVideo(videoId: string) {
 }
 
 /**
+ * Вернуть видео обратно в очередь из истории
+ */
+export async function returnVideoToQueue(videoId: string) {
+  const supabase = createServiceClient()
+
+  // Получить максимальную позицию в очереди
+  const { data: queueVideos } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .select('position')
+    .eq('status', 'pending')
+    .order('position', { ascending: false })
+    .limit(1)
+
+  const nextPosition = queueVideos && queueVideos.length > 0
+    ? queueVideos[0].position + 1
+    : 1
+
+  // Вернуть видео в очередь
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .update({
+      status: 'pending',
+      position: nextPosition,
+      played_at: null,
+    })
+    .eq('id', videoId)
+
+  if (error) {
+    console.error('Error returning video to queue:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
  * Получить ID настроек плеера (всегда одна запись)
  */
 async function getSettingsId(supabase: ReturnType<typeof createServiceClient>) {

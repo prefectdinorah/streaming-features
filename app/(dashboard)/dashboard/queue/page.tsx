@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { PlayerControls } from '@/components/player/PlayerControls'
 import { SeekControls } from '@/components/player/SeekControls'
 import { VideoQueueItem } from '@/components/player/VideoQueueItem'
+import { HistoryVideoItem } from '@/components/player/HistoryVideoItem'
 
 export const metadata: Metadata = {
   title: 'Очередь - YouTube Player',
@@ -99,56 +100,14 @@ export default async function QueuePage() {
             <h2 className="text-lg font-semibold text-white">
               Недавно воспроизведенные
             </h2>
+            <p className="text-sm text-gray-400 mt-1">
+              История последних {completed.length} видео
+            </p>
           </div>
 
           <div className="divide-y divide-gray-800">
             {completed.map((video) => (
-              <div
-                key={video.id}
-                className="px-6 py-4 flex items-start space-x-4"
-              >
-                {/* Миниатюра */}
-                {video.thumbnail_url && (
-                  <img
-                    src={video.thumbnail_url}
-                    alt={video.title}
-                    className="w-24 h-18 object-cover rounded opacity-75"
-                  />
-                )}
-
-                {/* Информация */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-300 truncate">
-                    {video.title}
-                  </h3>
-                  <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                    <span>{video.requested_by}</span>
-                    {video.played_at && (
-                      <span>
-                        {new Date(video.played_at).toLocaleString('ru-RU', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Статус */}
-                <div className="flex-shrink-0">
-                  <span
-                    className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      video.status === 'completed'
-                        ? 'bg-green-900 text-green-300'
-                        : 'bg-yellow-900 text-yellow-300'
-                    }`}
-                  >
-                    {video.status === 'completed' ? 'Завершено' : 'Пропущено'}
-                  </span>
-                </div>
-              </div>
+              <HistoryVideoItem key={video.id} video={video} />
             ))}
           </div>
         </div>
