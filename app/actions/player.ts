@@ -66,13 +66,18 @@ export async function initializePlayerSettings() {
  * Поставить плеер на паузу
  */
 export async function pausePlayer() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
+
+  const settingsId = await getSettingsId(supabase)
+  if (!settingsId) {
+    return { success: false, error: 'Settings not found' }
+  }
 
   const { error } = await supabase
     .schema('twitch_player')
     .from('player_settings')
     .update({ is_paused: true })
-    .eq('id', (await getSettingsId(supabase)) as string)
+    .eq('id', settingsId)
 
   if (error) {
     console.error('Error pausing player:', error)
@@ -87,13 +92,18 @@ export async function pausePlayer() {
  * Возобновить воспроизведение
  */
 export async function resumePlayer() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
+
+  const settingsId = await getSettingsId(supabase)
+  if (!settingsId) {
+    return { success: false, error: 'Settings not found' }
+  }
 
   const { error } = await supabase
     .schema('twitch_player')
     .from('player_settings')
     .update({ is_paused: false })
-    .eq('id', (await getSettingsId(supabase)) as string)
+    .eq('id', settingsId)
 
   if (error) {
     console.error('Error resuming player:', error)
@@ -108,7 +118,12 @@ export async function resumePlayer() {
  * Остановить плеер (пауза + сброс текущего видео)
  */
 export async function stopPlayer() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
+
+  const settingsId = await getSettingsId(supabase)
+  if (!settingsId) {
+    return { success: false, error: 'Settings not found' }
+  }
 
   const { error } = await supabase
     .schema('twitch_player')
@@ -117,7 +132,7 @@ export async function stopPlayer() {
       is_paused: true,
       current_video_id: null,
     })
-    .eq('id', (await getSettingsId(supabase)) as string)
+    .eq('id', settingsId)
 
   if (error) {
     console.error('Error stopping player:', error)
@@ -132,7 +147,7 @@ export async function stopPlayer() {
  * Пропустить текущее видео
  */
 export async function skipCurrentVideo() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   // Получить текущее видео из очереди
   const { data: videos, error: fetchError } = await supabase
@@ -177,13 +192,18 @@ export async function skipCurrentVideo() {
  * Перемотать видео на указанную секунду
  */
 export async function seekToPosition(seconds: number) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
+
+  const settingsId = await getSettingsId(supabase)
+  if (!settingsId) {
+    return { success: false, error: 'Settings not found' }
+  }
 
   const { error } = await supabase
     .schema('twitch_player')
     .from('player_settings')
     .update({ seek_to_seconds: seconds })
-    .eq('id', (await getSettingsId(supabase)) as string)
+    .eq('id', settingsId)
 
   if (error) {
     console.error('Error seeking video:', error)
@@ -199,7 +219,7 @@ export async function seekToPosition(seconds: number) {
  * Текущее видео удаляется, указанное становится первым
  */
 export async function playSpecificVideo(videoId: string) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   // Получить текущее первое видео
   const { data: currentVideos, error: fetchError } = await supabase
@@ -256,7 +276,7 @@ export async function playSpecificVideo(videoId: string) {
 /**
  * Получить ID настроек плеера (всегда одна запись)
  */
-async function getSettingsId(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getSettingsId(supabase: ReturnType<typeof createServiceClient>) {
   const { data } = await supabase
     .schema('twitch_player')
     .from('player_settings')
