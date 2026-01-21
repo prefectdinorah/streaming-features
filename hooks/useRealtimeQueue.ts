@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { VideoQueue } from '@/types/queue'
+import type { VideoQueue, PlayerSettings } from '@/types/queue'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 /**
@@ -37,8 +37,29 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 export function useRealtimeQueue() {
   const [queue, setQueue] = useState<VideoQueue[]>([])
   const [currentVideo, setCurrentVideo] = useState<VideoQueue | null>(null)
+  const [settings, setSettings] = useState<PlayerSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [supabase] = useState(() => createClient())
+
+  /**
+   * Загружает настройки плеера из БД
+   */
+  const loadSettings = useCallback(async () => {
+    const { data, error } = await supabase
+      .schema('twitch_player')
+      .from('player_settings')
+      .select('*')
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error loading settings:', error)
+      return
+    }
+
+    if (data) {
+      setSettings(data)
+    }
+  }, [supabase])
 
   /**
    * Загружает очередь из БД
@@ -87,17 +108,20 @@ export function useRealtimeQueue() {
     [supabase]
   )
 
-  // Загрузить очередь при монтировании компонента
+  // Загрузить очередь и настройки при монтировании компонента
   useEffect(() => {
     loadQueue()
-  }, [loadQueue])
+    loadSettings()
+  }, [loadQueue, loadSettings])
 
   // Подписаться на Realtime изменения
   useEffect(() => {
-    let channel: RealtimeChannel
+    let queueChannel: RealtimeChannel
+    let settingsChannel: RealtimeChannel
 
     const subscribe = async () => {
-      channel = supabase
+      // Подписка на изменения очереди
+      queueChannel = supabase
         .channel('video-queue-changes')
         .on(
           'postgres_changes',
@@ -107,13 +131,31 @@ export function useRealtimeQueue() {
             table: 'video_queue',
           },
           (payload) => {
-            console.log('Realtime update:', payload)
-            // Перезагрузить очередь при любом изменении
+            console.log('Queue realtime update:', payload)
             loadQueue()
           }
         )
         .subscribe((status) => {
-          console.log('Realtime subscription status:', status)
+          console.log('Queue subscription status:', status)
+        })
+
+      // Подписка на изменения настроек (пауза/стоп)
+      settingsChannel = supabase
+        .channel('player-settings-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'twitch_player',
+            table: 'player_settings',
+          },
+          (payload) => {
+            console.log('Settings realtime update:', payload)
+            loadSettings()
+          }
+        )
+        .subscribe((status) => {
+          console.log('Settings subscription status:', status)
         })
     }
 
@@ -121,16 +163,21 @@ export function useRealtimeQueue() {
 
     // Cleanup при размонтировании
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
+      if (queueChannel) {
+        supabase.removeChannel(queueChannel)
+      }
+      if (settingsChannel) {
+        supabase.removeChannel(settingsChannel)
       }
     }
-  }, [supabase, loadQueue])
+  }, [supabase, loadQueue, loadSettings])
 
   return {
     queue,
     currentVideo,
     nextVideo: queue[1] || null,
+    settings,
+    isPaused: settings?.is_paused ?? false,
     isLoading,
     markAsCompleted,
   }

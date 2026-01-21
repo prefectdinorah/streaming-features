@@ -1,6 +1,7 @@
 'use server'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 /**
  * Инициализирует настройки плеера в БД
@@ -59,4 +60,128 @@ export async function initializePlayerSettings() {
   } catch (error) {
     console.error('Unexpected error initializing player settings:', error)
   }
+}
+
+/**
+ * Поставить плеер на паузу
+ */
+export async function pausePlayer() {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .update({ is_paused: true })
+    .eq('id', (await getSettingsId(supabase)) as string)
+
+  if (error) {
+    console.error('Error pausing player:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
+ * Возобновить воспроизведение
+ */
+export async function resumePlayer() {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .update({ is_paused: false })
+    .eq('id', (await getSettingsId(supabase)) as string)
+
+  if (error) {
+    console.error('Error resuming player:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
+ * Остановить плеер (пауза + сброс текущего видео)
+ */
+export async function stopPlayer() {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .update({
+      is_paused: true,
+      current_video_id: null,
+    })
+    .eq('id', (await getSettingsId(supabase)) as string)
+
+  if (error) {
+    console.error('Error stopping player:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
+ * Пропустить текущее видео
+ */
+export async function skipCurrentVideo() {
+  const supabase = await createClient()
+
+  // Получить текущее видео из очереди
+  const { data: videos, error: fetchError } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .select('*')
+    .eq('status', 'pending')
+    .order('position', { ascending: true })
+    .limit(1)
+
+  if (fetchError) {
+    console.error('Error fetching current video:', fetchError)
+    return { success: false, error: fetchError.message }
+  }
+
+  if (!videos || videos.length === 0) {
+    return { success: false, error: 'No video to skip' }
+  }
+
+  const currentVideo = videos[0]
+
+  // Пометить как пропущенное
+  const { error: updateError } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .update({
+      status: 'skipped',
+      played_at: new Date().toISOString(),
+    })
+    .eq('id', currentVideo.id)
+
+  if (updateError) {
+    console.error('Error skipping video:', updateError)
+    return { success: false, error: updateError.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
+ * Получить ID настроек плеера (всегда одна запись)
+ */
+async function getSettingsId(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .select('id')
+    .maybeSingle()
+
+  return data?.id
 }

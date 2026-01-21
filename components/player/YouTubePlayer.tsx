@@ -66,7 +66,7 @@ declare global {
  */
 export function YouTubePlayer() {
   const playerRef = useRef<YTPlayer | null>(null)
-  const { currentVideo, markAsCompleted, isLoading } = useRealtimeQueue()
+  const { currentVideo, isPaused, markAsCompleted, isLoading } = useRealtimeQueue()
   const [isApiReady, setIsApiReady] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null)
 
@@ -155,6 +155,20 @@ export function YouTubePlayer() {
 
   // Шаг 3: Автоматическое переключение на следующее видео
   useEffect(() => {
+    // Если видео нет в очереди - остановить и уничтожить плеер
+    if (!currentVideo && playerRef.current) {
+      console.log('Queue is empty, stopping player')
+      try {
+        playerRef.current.stopVideo()
+        playerRef.current.destroy()
+        playerRef.current = null
+        setCurrentVideoId(null)
+      } catch (error) {
+        console.error('Error destroying player:', error)
+      }
+      return
+    }
+
     if (
       !playerRef.current ||
       !currentVideo ||
@@ -172,6 +186,25 @@ export function YouTubePlayer() {
       console.error('Error switching video:', error)
     }
   }, [currentVideo, currentVideoId])
+
+  // Шаг 4: Управление паузой через Realtime
+  useEffect(() => {
+    if (!playerRef.current) {
+      return
+    }
+
+    console.log('Pause state changed:', isPaused)
+
+    try {
+      if (isPaused) {
+        playerRef.current.pauseVideo()
+      } else {
+        playerRef.current.playVideo()
+      }
+    } catch (error) {
+      console.error('Error toggling pause:', error)
+    }
+  }, [isPaused])
 
   // UI States
 

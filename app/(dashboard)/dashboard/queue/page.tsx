@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import { PlayerControls } from '@/components/player/PlayerControls'
 
 export const metadata: Metadata = {
   title: 'Очередь - YouTube Player',
@@ -11,6 +12,13 @@ export const metadata: Metadata = {
  */
 export default async function QueuePage() {
   const supabase = await createClient()
+
+  // Получить настройки плеера
+  const { data: settings } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .select('*')
+    .maybeSingle()
 
   // Получить всю очередь
   const { data: queue } = await supabase
@@ -43,6 +51,12 @@ export default async function QueuePage() {
           Всего в очереди: {queue?.length || 0}
         </div>
       </div>
+
+      {/* Панель управления плеером */}
+      <PlayerControls
+        isPaused={settings?.is_paused ?? false}
+        hasVideo={(queue?.length ?? 0) > 0}
+      />
 
       {/* Текущая очередь */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
