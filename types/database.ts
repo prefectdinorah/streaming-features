@@ -80,6 +80,7 @@ export interface Database {
           max_queue_size: number
           max_video_duration: number
           allow_duplicates: boolean
+          seek_to_seconds: number | null
           updated_at: string
         }
         Insert: {
@@ -89,6 +90,7 @@ export interface Database {
           max_queue_size?: number
           max_video_duration?: number
           allow_duplicates?: boolean
+          seek_to_seconds?: number | null
           updated_at?: string
         }
         Update: {
@@ -98,6 +100,7 @@ export interface Database {
           max_queue_size?: number
           max_video_duration?: number
           allow_duplicates?: boolean
+          seek_to_seconds?: number | null
           updated_at?: string
         }
       }

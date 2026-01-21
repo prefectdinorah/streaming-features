@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { PlayerControls } from '@/components/player/PlayerControls'
+import { SeekControls } from '@/components/player/SeekControls'
+import { VideoQueueItem } from '@/components/player/VideoQueueItem'
 
 export const metadata: Metadata = {
   title: 'Очередь - YouTube Player',
@@ -58,6 +60,12 @@ export default async function QueuePage() {
         hasVideo={(queue?.length ?? 0) > 0}
       />
 
+      {/* Перемотка */}
+      <SeekControls
+        hasVideo={(queue?.length ?? 0) > 0}
+        videoDuration={queue?.[0]?.duration ?? undefined}
+      />
+
       {/* Текущая очередь */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-800">
@@ -69,83 +77,12 @@ export default async function QueuePage() {
         {queue && queue.length > 0 ? (
           <div className="divide-y divide-gray-800">
             {queue.map((video, index) => (
-              <div
+              <VideoQueueItem
                 key={video.id}
-                className="px-6 py-4 flex items-start space-x-4 hover:bg-gray-800 transition-colors"
-              >
-                {/* Позиция */}
-                <div className="flex-shrink-0 w-8 text-center">
-                  <span
-                    className={`text-lg font-bold ${
-                      index === 0 ? 'text-blue-500' : 'text-gray-500'
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                </div>
-
-                {/* Миниатюра */}
-                {video.thumbnail_url && (
-                  <img
-                    src={video.thumbnail_url}
-                    alt={video.title}
-                    className="w-32 h-24 object-cover rounded"
-                  />
-                )}
-
-                {/* Информация */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-medium text-white truncate">
-                    {video.title}
-                  </h3>
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
-                    <span className="flex items-center">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      {video.requested_by}
-                    </span>
-                    {video.duration && (
-                      <span className="flex items-center">
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        {Math.floor(video.duration / 60)}:
-                        {String(video.duration % 60).padStart(2, '0')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Статус */}
-                {index === 0 && (
-                  <div className="flex-shrink-0">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
-                      Воспроизводится
-                    </span>
-                  </div>
-                )}
-              </div>
+                video={video}
+                index={index}
+                isFirst={index === 0}
+              />
             ))}
           </div>
         ) : (

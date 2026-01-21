@@ -32,6 +32,9 @@ interface YTPlayer {
   playVideo(): void
   pauseVideo(): void
   stopVideo(): void
+  seekTo(seconds: number, allowSeekAhead: boolean): void
+  getCurrentTime(): number
+  getDuration(): number
   destroy(): void
 }
 
@@ -66,7 +69,7 @@ declare global {
  */
 export function YouTubePlayer() {
   const playerRef = useRef<YTPlayer | null>(null)
-  const { currentVideo, isPaused, markAsCompleted, isLoading } = useRealtimeQueue()
+  const { currentVideo, isPaused, settings, markAsCompleted, isLoading } = useRealtimeQueue()
   const [isApiReady, setIsApiReady] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null)
 
@@ -205,6 +208,36 @@ export function YouTubePlayer() {
       console.error('Error toggling pause:', error)
     }
   }, [isPaused])
+
+  // Шаг 5: Перемотка видео через Realtime
+  useEffect(() => {
+    if (!playerRef.current || !settings?.seek_to_seconds) {
+      return
+    }
+
+    const seekToSeconds = settings.seek_to_seconds
+
+    console.log('Seeking to:', seekToSeconds)
+
+    try {
+      playerRef.current.seekTo(seekToSeconds, true)
+
+      // Сбросить seek_to_seconds обратно в NULL после перемотки
+      // Используем небольшую задержку чтобы плеер успел отреагировать
+      setTimeout(async () => {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+
+        await supabase
+          .schema('twitch_player')
+          .from('player_settings')
+          .update({ seek_to_seconds: null })
+          .eq('id', settings.id)
+      }, 500)
+    } catch (error) {
+      console.error('Error seeking video:', error)
+    }
+  }, [settings?.seek_to_seconds, settings?.id])
 
   // UI States
 

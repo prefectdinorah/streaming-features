@@ -174,6 +174,86 @@ export async function skipCurrentVideo() {
 }
 
 /**
+ * Перемотать видео на указанную секунду
+ */
+export async function seekToPosition(seconds: number) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('player_settings')
+    .update({ seek_to_seconds: seconds })
+    .eq('id', (await getSettingsId(supabase)) as string)
+
+  if (error) {
+    console.error('Error seeking video:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
+ * Запустить конкретное видео из очереди
+ * Текущее видео удаляется, указанное становится первым
+ */
+export async function playSpecificVideo(videoId: string) {
+  const supabase = await createClient()
+
+  // Получить текущее первое видео
+  const { data: currentVideos, error: fetchError } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .select('*')
+    .eq('status', 'pending')
+    .order('position', { ascending: true })
+    .limit(1)
+
+  if (fetchError) {
+    console.error('Error fetching current video:', fetchError)
+    return { success: false, error: fetchError.message }
+  }
+
+  // Удалить текущее видео если есть
+  if (currentVideos && currentVideos.length > 0) {
+    const currentVideo = currentVideos[0]
+
+    // Не удалять если это то же видео
+    if (currentVideo.id === videoId) {
+      return { success: true }
+    }
+
+    const { error: deleteError } = await supabase
+      .schema('twitch_player')
+      .from('video_queue')
+      .delete()
+      .eq('id', currentVideo.id)
+
+    if (deleteError) {
+      console.error('Error deleting current video:', deleteError)
+      return { success: false, error: deleteError.message }
+    }
+  }
+
+  // Поставить выбранное видео на первую позицию
+  const { error: updateError } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .update({ position: 0 })
+    .eq('id', videoId)
+
+  if (updateError) {
+    console.error('Error updating video position:', updateError)
+    return { success: false, error: updateError.message }
+  }
+
+  // Триггер автоматически переиндексирует позиции
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
  * Получить ID настроек плеера (всегда одна запись)
  */
 async function getSettingsId(supabase: Awaited<ReturnType<typeof createClient>>) {
