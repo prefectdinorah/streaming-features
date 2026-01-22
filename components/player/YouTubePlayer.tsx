@@ -174,7 +174,7 @@ export function YouTubePlayer() {
             event.target.playVideo()
           },
           onStateChange: (event) => {
-            const states = {
+            const states: Record<string, string> = {
               '-1': 'UNSTARTED',
               '0': 'ENDED',
               '1': 'PLAYING',
