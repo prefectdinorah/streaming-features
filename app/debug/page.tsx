@@ -115,7 +115,7 @@ export default function DebugPage() {
         (payload) => {
           addLog('🔄 Realtime update received!')
           addLog(`New data: ${JSON.stringify(payload.new)}`)
-          setSettings(payload.new as PlayerSettings)
+          setSettings(payload.new as PlayerSettingsExtended)
         }
       )
       .subscribe((status) => {
