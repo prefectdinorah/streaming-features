@@ -45,18 +45,14 @@ export default async function SettingsPage() {
                 Статус плеера
               </h3>
               <p className="text-sm text-gray-400 mt-1">
-                Воспроизведение видео из очереди
+                Плеер работает автономно и автоматически воспроизводит видео из очереди
               </p>
             </div>
             <div>
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  settings?.is_paused
-                    ? 'bg-yellow-900 text-yellow-300'
-                    : 'bg-green-900 text-green-300'
-                }`}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-900 text-green-300"
               >
-                {settings?.is_paused ? 'Пауза' : 'Активен'}
+                Активен
               </span>
             </div>
           </div>

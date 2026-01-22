@@ -10,9 +10,10 @@ import type { PlayerStatusResponse } from '@/types/queue'
  * Response:
  * - success: boolean
  * - data?: {
- *     isPaused: boolean
  *     currentVideo: VideoQueue | null
  *     queueLength: number
+ *     transparentBackground?: boolean
+ *     backgroundColor?: string
  *   }
  * - error?: string
  */
@@ -48,9 +49,10 @@ export async function GET() {
       {
         success: true,
         data: {
-          isPaused: settings?.is_paused || false,
           currentVideo: currentVideo || null,
           queueLength: count || 0,
+          transparentBackground: settings?.transparent_background,
+          backgroundColor: settings?.background_color,
         },
       },
       { status: 200 }

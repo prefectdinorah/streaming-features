@@ -113,12 +113,12 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm text-gray-400">Статус</p>
               <p className="text-3xl font-bold text-white mt-1">
-                {settings?.is_paused ? 'Пауза' : 'Активен'}
+                {currentVideo ? 'Активен' : 'Ожидание'}
               </p>
             </div>
             <div
               className={`p-3 rounded-lg ${
-                settings?.is_paused ? 'bg-yellow-600' : 'bg-green-600'
+                currentVideo ? 'bg-green-600' : 'bg-gray-600'
               }`}
             >
               <svg
@@ -127,21 +127,12 @@ export default async function DashboardPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                {settings?.is_paused ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                  />
-                )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
               </svg>
             </div>
           </div>
