@@ -12,10 +12,11 @@ import { revalidatePath } from 'next/cache'
  * Вызывается автоматически при первом запуске приложения через root layout.
  *
  * Дефолтные настройки:
- * - is_paused: false
  * - max_queue_size: 50
  * - max_video_duration: 600 секунд (10 минут)
  * - allow_duplicates: false
+ * - transparent_background: true (для наложения в OBS)
+ * - background_color: #000000
  */
 export async function initializePlayerSettings() {
   try {
@@ -45,10 +46,11 @@ export async function initializePlayerSettings() {
       .schema('twitch_player')
       .from('player_settings')
       .insert({
-        is_paused: false,
         max_queue_size: 50,
         max_video_duration: 600, // 10 минут
         allow_duplicates: false,
+        transparent_background: true,
+        background_color: '#000000',
       })
 
     if (insertError) {
@@ -62,86 +64,6 @@ export async function initializePlayerSettings() {
   }
 }
 
-/**
- * Поставить плеер на паузу
- */
-export async function pausePlayer() {
-  const supabase = createServiceClient()
-
-  const settingsId = await getSettingsId(supabase)
-  if (!settingsId) {
-    return { success: false, error: 'Settings not found' }
-  }
-
-  const { error } = await supabase
-    .schema('twitch_player')
-    .from('player_settings')
-    .update({ is_paused: true })
-    .eq('id', settingsId)
-
-  if (error) {
-    console.error('Error pausing player:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/dashboard')
-  return { success: true }
-}
-
-/**
- * Возобновить воспроизведение
- */
-export async function resumePlayer() {
-  const supabase = createServiceClient()
-
-  const settingsId = await getSettingsId(supabase)
-  if (!settingsId) {
-    return { success: false, error: 'Settings not found' }
-  }
-
-  const { error } = await supabase
-    .schema('twitch_player')
-    .from('player_settings')
-    .update({ is_paused: false })
-    .eq('id', settingsId)
-
-  if (error) {
-    console.error('Error resuming player:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/dashboard')
-  return { success: true }
-}
-
-/**
- * Остановить плеер (пауза + сброс текущего видео)
- */
-export async function stopPlayer() {
-  const supabase = createServiceClient()
-
-  const settingsId = await getSettingsId(supabase)
-  if (!settingsId) {
-    return { success: false, error: 'Settings not found' }
-  }
-
-  const { error } = await supabase
-    .schema('twitch_player')
-    .from('player_settings')
-    .update({
-      is_paused: true,
-      current_video_id: null,
-    })
-    .eq('id', settingsId)
-
-  if (error) {
-    console.error('Error stopping player:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/dashboard')
-  return { success: true }
-}
 
 /**
  * Пропустить текущее видео
@@ -189,27 +111,34 @@ export async function skipCurrentVideo() {
 }
 
 /**
- * Перемотать видео на указанную секунду
+ * Пометить видео как завершенное
+ * Используется плеером когда видео заканчивается
  */
-export async function seekToPosition(seconds: number) {
+export async function markVideoAsCompleted(videoId: string) {
   const supabase = createServiceClient()
 
-  const settingsId = await getSettingsId(supabase)
-  if (!settingsId) {
-    return { success: false, error: 'Settings not found' }
-  }
+  // Детальное логирование с stack trace
+  console.log('[markVideoAsCompleted] ========================================')
+  console.log('[markVideoAsCompleted] CALLED! Video ID:', videoId)
+  console.log('[markVideoAsCompleted] Timestamp:', new Date().toISOString())
+  console.log('[markVideoAsCompleted] Stack trace:', new Error().stack)
+  console.log('[markVideoAsCompleted] ========================================')
 
   const { error } = await supabase
     .schema('twitch_player')
-    .from('player_settings')
-    .update({ seek_to_seconds: seconds })
-    .eq('id', settingsId)
+    .from('video_queue')
+    .update({
+      status: 'completed',
+      played_at: new Date().toISOString(),
+    })
+    .eq('id', videoId)
 
   if (error) {
-    console.error('Error seeking video:', error)
+    console.error('[markVideoAsCompleted] ❌ Error:', error)
     return { success: false, error: error.message }
   }
 
+  console.log('[markVideoAsCompleted] ✅ Success - video marked as completed')
   revalidatePath('/dashboard')
   return { success: true }
 }
