@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRealtimeQueue } from '@/hooks/useRealtimeQueue'
-import { markVideoAsCompleted } from '@/app/actions/player'
+import { markVideoAsCompleted, markVideoAsSkipped } from '@/app/actions/player'
 
 // Минимальная типизация для YouTube IFrame API
 interface YT {
@@ -79,19 +79,27 @@ export function YouTubePlayer() {
   // Уникальный ID для этого экземпляра плеера (для отладки)
   const playerInstanceId = useRef(`player-${Math.random().toString(36).substr(2, 9)}`)
 
-  // ЗАЩИТА: Плеер работает только на localhost (для разработки)
-  // На production (Vercel) плеер отключен, чтобы избежать конфликтов с локальной версией
+  // 🔍 ОТЛАДКА: Логировать все изменения состояний плеера
+  useEffect(() => {
+    console.log(`[${playerInstanceId.current}] 🔍 Component state:`, {
+      hasPlayer: !!playerRef.current,
+      currentVideoId,
+      hasPlayed: hasPlayedRef.current,
+      isApiReady,
+      currentVideo: currentVideo?.id,
+    })
+  }, [playerRef.current, currentVideoId, isApiReady, currentVideo])
+
+  // ВРЕМЕННО: Включен на всех окружениях для отладки
+  // TODO: Вернуть localhost-only защиту после отладки
   const [isLocalhost, setIsLocalhost] = useState(true)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname
-      const localhost = hostname === 'localhost' || hostname === '127.0.0.1'
-      setIsLocalhost(localhost)
-
-      if (!localhost) {
-        console.warn(`[${playerInstanceId.current}] Player disabled on production (${hostname})`)
-      }
+      console.log(`[${playerInstanceId.current}] Running on hostname: ${hostname}`)
+      // Временно разрешаем на всех хостах
+      setIsLocalhost(true)
     }
   }, [])
 
@@ -200,12 +208,15 @@ export function YouTubePlayer() {
 
             // YT.PlayerState.ENDED = 0
             if (event.data === window.YT.PlayerState.ENDED) {
-              console.log(`[${playerInstanceId.current}] 🎬 Video ENDED, marking as completed:`, {
+              const endedLogId = Math.random().toString(36).substring(7)
+              console.log(`[${playerInstanceId.current}] 🎬 Video ENDED [ID:${endedLogId}], marking as completed:`, {
                 videoId: currentVideo.id,
-                title: currentVideo.title
+                title: currentVideo.title,
+                currentTime: playerRef.current?.getCurrentTime(),
+                duration: playerRef.current?.getDuration()
               })
               markVideoAsCompleted(currentVideo.id).catch(err => {
-                console.error(`[${playerInstanceId.current}] Failed to mark video as completed:`, err)
+                console.error(`[${playerInstanceId.current}] [ID:${endedLogId}] Failed to mark video as completed:`, err)
               })
             }
 
@@ -220,6 +231,7 @@ export function YouTubePlayer() {
             }
           },
           onError: (event) => {
+            const errorLogId = Math.random().toString(36).substring(7)
             const errorCodes: Record<number, string> = {
               2: 'Invalid video ID',
               5: 'HTML5 player error',
@@ -231,7 +243,12 @@ export function YouTubePlayer() {
             const errorCode = event.data
             const errorMessage = errorCodes[errorCode] || `Unknown error`
 
-            console.error(`[${playerInstanceId.current}] ❌ Player error:`, {
+            // Получить текущее время воспроизведения и длительность
+            const currentTime = playerRef.current?.getCurrentTime() || 0
+            const duration = playerRef.current?.getDuration() || 0
+            const playedPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
+
+            console.error(`[${playerInstanceId.current}] ❌ Player error [ID:${errorLogId}]:`, {
               code: errorCode,
               codeType: typeof errorCode,
               message: errorMessage,
@@ -239,10 +256,13 @@ export function YouTubePlayer() {
               youtubeId: currentVideo.youtube_id,
               title: currentVideo.title,
               hasPlayed: hasPlayedRef.current,
+              currentTime: currentTime.toFixed(1),
+              duration: duration.toFixed(1),
+              playedPercentage: playedPercentage.toFixed(1) + '%',
               rawEvent: event
             })
 
-            console.error(`[${playerInstanceId.current}] Error code: ${errorCode}, Message: ${errorMessage}`)
+            console.error(`[${playerInstanceId.current}] [ID:${errorLogId}] Error code: ${errorCode}, Message: ${errorMessage}`)
 
             // Показать предупреждение о блокировщике рекламы при ошибках загрузки
             if (!hasPlayedRef.current && (errorCode === 5 || errorCode === 150)) {
@@ -250,25 +270,40 @@ export function YouTubePlayer() {
               setTimeout(() => setShowAdBlockerWarning(false), 10000) // Скрыть через 10 сек
             }
 
-            // Только пропускать видео если оно хотя бы начало воспроизводиться
-            // Это предотвращает мгновенный пропуск видео при ошибках загрузки
-            if (hasPlayedRef.current) {
-              console.log(`[${playerInstanceId.current}] Video had started playing, marking as completed`)
+            // ВАЖНО: Проверяем не только начало воспроизведения, но и сколько времени видео уже играло
+            // Минимальные требования для завершения:
+            // - Видео проиграло минимум 30 секунд ИЛИ
+            // - Видео проиграло минимум 80% своей длительности
+            const MIN_PLAYED_TIME = 30 // секунд
+            const MIN_PLAYED_PERCENTAGE = 80 // процентов
+
+            const shouldMarkAsCompleted =
+              hasPlayedRef.current &&
+              (currentTime >= MIN_PLAYED_TIME || playedPercentage >= MIN_PLAYED_PERCENTAGE)
+
+            if (shouldMarkAsCompleted) {
+              console.log(`[${playerInstanceId.current}] [ID:${errorLogId}] ✅ Video played enough (${currentTime.toFixed(1)}s / ${playedPercentage.toFixed(1)}%), marking as completed`)
               markVideoAsCompleted(currentVideo.id).catch(err => {
-                console.error(`[${playerInstanceId.current}] Failed to mark video as completed on error:`, err)
+                console.error(`[${playerInstanceId.current}] [ID:${errorLogId}] Failed to mark video as completed on error:`, err)
+              })
+            } else if (hasPlayedRef.current) {
+              console.warn(`[${playerInstanceId.current}] [ID:${errorLogId}] ⚠️ Video started but didn't play enough (${currentTime.toFixed(1)}s / ${playedPercentage.toFixed(1)}%), marking as skipped`)
+              // Видео начало играть, но проиграло слишком мало времени - помечаем как skipped
+              markVideoAsSkipped(currentVideo.id).catch(err => {
+                console.error(`[${playerInstanceId.current}] [ID:${errorLogId}] Failed to skip video on error:`, err)
               })
             } else {
-              console.warn(`[${playerInstanceId.current}] Video never started playing, waiting 3 seconds before skipping...`)
+              console.warn(`[${playerInstanceId.current}] [ID:${errorLogId}] Video never started playing, waiting 3 seconds before skipping...`)
               // Даем YouTube 3 секунды загрузиться
-              // Если за это время видео не начнет играть - пропускаем
+              // Если за это время видео не начнет играть - помечаем как skipped
               setTimeout(() => {
                 if (!hasPlayedRef.current) {
-                  console.warn(`[${playerInstanceId.current}] Video still not playing after 3 seconds, skipping it`)
-                  markVideoAsCompleted(currentVideo.id).catch(err => {
-                    console.error(`[${playerInstanceId.current}] Failed to skip video on error:`, err)
+                  console.warn(`[${playerInstanceId.current}] [ID:${errorLogId}] Video still not playing after 3 seconds, marking as skipped`)
+                  markVideoAsSkipped(currentVideo.id).catch(err => {
+                    console.error(`[${playerInstanceId.current}] [ID:${errorLogId}] Failed to skip video on error:`, err)
                   })
                 } else {
-                  console.log(`[${playerInstanceId.current}] Video started playing during wait period, not skipping`)
+                  console.log(`[${playerInstanceId.current}] [ID:${errorLogId}] Video started playing during wait period, not skipping`)
                 }
               }, 3000)
             }

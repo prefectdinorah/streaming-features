@@ -144,6 +144,37 @@ export async function markVideoAsCompleted(videoId: string) {
 }
 
 /**
+ * Пометить видео как пропущенное (по ошибке или недостаточному времени воспроизведения)
+ * Используется плеером когда видео не может быть воспроизведено или проиграло слишком мало
+ */
+export async function markVideoAsSkipped(videoId: string) {
+  const supabase = createServiceClient()
+
+  console.log('[markVideoAsSkipped] ========================================')
+  console.log('[markVideoAsSkipped] CALLED! Video ID:', videoId)
+  console.log('[markVideoAsSkipped] Timestamp:', new Date().toISOString())
+  console.log('[markVideoAsSkipped] ========================================')
+
+  const { error } = await supabase
+    .schema('twitch_player')
+    .from('video_queue')
+    .update({
+      status: 'skipped',
+      played_at: new Date().toISOString(),
+    })
+    .eq('id', videoId)
+
+  if (error) {
+    console.error('[markVideoAsSkipped] ❌ Error:', error)
+    return { success: false, error: error.message }
+  }
+
+  console.log('[markVideoAsSkipped] ✅ Success - video marked as skipped')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+/**
  * Запустить конкретное видео из очереди
  * Текущее видео удаляется, указанное становится первым
  */
