@@ -106,7 +106,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800 space-y-2">
         <Link
           href="/player"
           target="_blank"
@@ -126,6 +126,26 @@ export function Sidebar() {
             />
           </svg>
           <span>Открыть плеер</span>
+        </Link>
+        <Link
+          href="/debug"
+          target="_blank"
+          className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-yellow-400 hover:text-yellow-300 transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            />
+          </svg>
+          <span>Debug Console</span>
         </Link>
       </div>
     </aside>

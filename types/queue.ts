@@ -40,9 +40,10 @@ export interface QueueListResponse {
 export interface PlayerStatusResponse {
   success: boolean
   data?: {
-    isPaused: boolean
     currentVideo: VideoQueue | null
     queueLength: number
+    transparentBackground?: boolean
+    backgroundColor?: string
   }
   error?: string
 }
