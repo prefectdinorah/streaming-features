@@ -3,10 +3,21 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { skipCurrentVideo } from '@/app/actions/player'
-import type { PlayerSettings, VideoQueue } from '@/types/queue'
+import type { VideoQueue } from '@/types/queue'
+
+// Расширенный тип для player_settings с новыми полями
+interface PlayerSettingsExtended {
+  id: string
+  max_queue_size: number
+  max_video_duration: number
+  allow_duplicates: boolean
+  transparent_background?: boolean
+  background_color?: string
+  updated_at: string
+}
 
 export default function DebugPage() {
-  const [settings, setSettings] = useState<PlayerSettings | null>(null)
+  const [settings, setSettings] = useState<PlayerSettingsExtended | null>(null)
   const [queue, setQueue] = useState<VideoQueue[]>([])
   const [logs, setLogs] = useState<string[]>([])
   const [realtimeStatus, setRealtimeStatus] = useState<string>('Not connected')
