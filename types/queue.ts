@@ -4,7 +4,12 @@ import type { Database } from './database'
 export type VideoQueue = Database['twitch_player']['Tables']['video_queue']['Row']
 export type VideoQueueInsert = Database['twitch_player']['Tables']['video_queue']['Insert']
 export type VideoQueueUpdate = Database['twitch_player']['Tables']['video_queue']['Update']
-export type PlayerSettings = Database['twitch_player']['Tables']['player_settings']['Row']
+
+// Расширенный тип PlayerSettings с новыми полями после миграции
+export type PlayerSettings = Database['twitch_player']['Tables']['player_settings']['Row'] & {
+  transparent_background?: boolean
+  background_color?: string
+}
 
 // Enum для статусов видео
 export type VideoStatus = 'pending' | 'playing' | 'completed' | 'skipped'

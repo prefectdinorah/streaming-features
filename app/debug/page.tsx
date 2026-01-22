@@ -3,21 +3,10 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { skipCurrentVideo } from '@/app/actions/player'
-import type { VideoQueue } from '@/types/queue'
-
-// Расширенный тип для player_settings с новыми полями
-interface PlayerSettingsExtended {
-  id: string
-  max_queue_size: number
-  max_video_duration: number
-  allow_duplicates: boolean
-  transparent_background?: boolean
-  background_color?: string
-  updated_at: string
-}
+import type { VideoQueue, PlayerSettings } from '@/types/queue'
 
 export default function DebugPage() {
-  const [settings, setSettings] = useState<PlayerSettingsExtended | null>(null)
+  const [settings, setSettings] = useState<PlayerSettings | null>(null)
   const [queue, setQueue] = useState<VideoQueue[]>([])
   const [logs, setLogs] = useState<string[]>([])
   const [realtimeStatus, setRealtimeStatus] = useState<string>('Not connected')
@@ -115,7 +104,7 @@ export default function DebugPage() {
         (payload) => {
           addLog('🔄 Realtime update received!')
           addLog(`New data: ${JSON.stringify(payload.new)}`)
-          setSettings(payload.new as PlayerSettingsExtended)
+          setSettings(payload.new as PlayerSettings)
         }
       )
       .subscribe((status) => {
