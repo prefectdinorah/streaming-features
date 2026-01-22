@@ -97,7 +97,9 @@ export function YouTubePlayer() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname
+      const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
       console.log(`[${playerInstanceId.current}] Running on hostname: ${hostname}`)
+      console.log(`[${playerInstanceId.current}] YouTube API Key status: ${apiKey ? '✅ Present (length: ' + apiKey.length + ')' : '❌ Missing'}`)
       // Временно разрешаем на всех хостах
       setIsLocalhost(true)
     }
@@ -111,9 +113,19 @@ export function YouTubePlayer() {
       return
     }
 
-    // Загрузить скрипт YouTube IFrame API
+    // Загрузить скрипт YouTube IFrame API с API ключом (если есть)
     const tag = document.createElement('script')
-    tag.src = 'https://www.youtube.com/iframe_api'
+    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+
+    // Добавляем API ключ если доступен
+    if (apiKey) {
+      tag.src = `https://www.youtube.com/iframe_api?key=${apiKey}`
+      console.log(`[${playerInstanceId.current}] Loading YouTube API with key`)
+    } else {
+      tag.src = 'https://www.youtube.com/iframe_api'
+      console.warn(`[${playerInstanceId.current}] Loading YouTube API without key (may have rate limits)`)
+    }
+
     tag.async = true
 
     const firstScriptTag = document.getElementsByTagName('script')[0]
